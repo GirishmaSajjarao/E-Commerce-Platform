@@ -5,6 +5,7 @@ import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, Tooltip } fro
 import { Bar } from 'react-chartjs-2';
 import { api, date, money } from './api.js';
 import { RequestState, Totals } from './store.jsx';
+import { AdminChats, SecurityPage } from './chat.jsx';
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip);
 const queryFor = path => ({ queryKey: ['admin', path], queryFn: () => api('/admin/' + path) });
@@ -126,11 +127,13 @@ export function Admin() {
   return <><nav className="admin-nav" aria-label="Administration">
     <NavLink to="/admin" end>Sales</NavLink><NavLink to="/admin/orders">Orders</NavLink><NavLink to="/admin/payments">Payments</NavLink>
     <NavLink to="/admin/carts">Carts</NavLink><NavLink to="/admin/customers">Customers</NavLink><NavLink to="/admin/products">Inventory</NavLink>
+    <NavLink to="/admin/chats">Support insights</NavLink><NavLink to="/admin/qa">AI Quality</NavLink>
   </nav><Routes>
     <Route index element={<Sales />} />
     <Route path="orders" element={<AdminOrders />} /><Route path="orders/:number" element={<AdminOrder />} />
     {Object.keys(columns).map(resource => <Route key={resource} path={resource} element={<Records resource={resource} />} />)}
     <Route path="products" element={<Inventory />} />
+    <Route path="chats" element={<AdminChats />} /><Route path="qa" element={<SecurityPage />} />
     <Route path="*" element={<p>Admin page unavailable. <Link to="/admin">Sales dashboard</Link></p>} />
   </Routes></>;
 }

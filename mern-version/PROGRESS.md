@@ -39,3 +39,13 @@ Built role-protected sales, orders, payments, customers, carts and inventory pag
 - `npm.cmd run build -w client` completed and transformed 82 modules.
 
 Open verification: browser admin workflows and chart rendering. Support insights and AI Quality follow in later phases.
+
+## Phase 5 — Support chat and security evaluation
+
+Built customer-scoped retrieval, server-side order actions with explicit confirmation, raw and guarded output handling, mock and Gemini providers, conversations, the chat widget, admin support insights and impersonation, and background security runs. Ported 22 security cases and added four.
+
+- `npm.cmd test` passed 13 Jest tests in 3 suites and 3 Vitest tests in 1 file. All 26 stored mock security cases passed. Tests exercised retrieval ownership, stored address isolation, last-four handling, PII redaction, mocked Gemini errors, and confirmation before cancellation.
+- `npm.cmd run build -w client` exited 0.
+- The first run found a missing prefix on saved mock security answers. The rerun verified the fix.
+
+The Gemini provider currently uses the Gemini REST endpoint with a mockable fetch adapter. Live Gemini, browser chat and external judging are unverified.

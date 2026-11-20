@@ -10,6 +10,8 @@ import mongoose from 'mongoose';
 import { auth, requireUser, requireAdmin } from './auth.js';
 import { commerce } from './commerce-routes.js';
 import { admin } from './admin.js';
+import { chat } from './chat-routes.js';
+import { qa } from './qa.js';
 import { config } from './config.js';
 import { handleError, HttpError, rejectUnsafeKeys } from './http.js';
 
@@ -40,6 +42,8 @@ app.get('/api/health', (req, res) => {
 });
 app.use('/api/auth', auth);
 app.use('/api', commerce);
+app.use('/api', chat);
+app.use('/api/qa', qa);
 app.get('/api/admin/session', requireUser, requireAdmin, (req, res) => res.json({ role: req.user.role }));
 app.use('/api/admin', admin);
 app.use('/api/docs', swagger.serve, swagger.setup({

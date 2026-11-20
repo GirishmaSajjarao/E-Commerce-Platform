@@ -182,6 +182,7 @@ export function OrderDetail({ user, confirmed }) {
       {order.tracking && <p data-testid="tracking">Tracking: {order.carrier} · {order.tracking}</p>}
       {order.returnStatus !== 'None' && <p>Return: {order.returnStatus}</p>}
       <h3>Order timeline</h3><ol>{order.statusHistory.map((entry, index) => <li key={index}>{entry.status} · {date(entry.at)}</li>)}</ol>
+      <p><Link to={'/support?order=' + order.number}>Get support for this order</Link></p>
       {['Processing', 'PendingPayment'].includes(order.status) && <button className="secondary" disabled={mutation.isPending} onClick={() => mutation.mutate('cancel')}>Cancel order</button>}
       {returnable && <button className="secondary" disabled={mutation.isPending} onClick={() => mutation.mutate('return')}>Request return</button>}
       {mutation.error && <p role="alert">{mutation.error.message}</p>}

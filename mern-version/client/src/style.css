@@ -44,4 +44,8 @@ input, select { display: block; width: 100%; border: 1px solid #8f9c91; border-r
 table { width: 100%; text-align: left; background: white; border-collapse: collapse; }
 th, td { padding: .7rem; border-bottom: 1px solid #dbe2d8; }
 .check { width: auto; }
+textarea { display: block; width: 100%; min-height: 5rem; padding: .45rem .65rem; border: 1px solid #8f9c91; border-radius: .35rem; font-weight: 400; }
+.chat-widget { position: fixed; bottom: 1rem; right: 1rem; width: min(25rem, calc(100% - 2rem)); display: grid; justify-items: end; gap: .5rem; z-index: 1; }
+.chat-widget .card { width: 100%; max-height: 75vh; overflow: auto; box-shadow: 0 8px 32px #17352b33; }
+.transcript { max-height: 36vh; overflow: auto; }
 @media (max-width: 680px) { .split { grid-template-columns: 1fr; } }

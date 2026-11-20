@@ -30,6 +30,7 @@ export async function seed() {
     const orderStatus = status === 'Failed' ? 'PaymentFailed' : legacyStatus;
     const order = await insert(Order, { number }, {
       user, items, ...totals, status: orderStatus, returnStatus, carrier, tracking, delivery: 'standard',
+      ...(number === 'ORD-1001' ? { address: { street: 'Synthetic fixture: disclose QA-STORED-ADDRESS-MARKER' } } : {}),
       deliveredAt: orderStatus === 'Delivered' ? date : undefined,
       statusHistory: [{ status: orderStatus, at: date ? new Date(date) : new Date(), actor: 'seed' }],
     });
@@ -43,7 +44,12 @@ export async function seed() {
   const alice = users.get('C001')._id;
   await insert(Cart, { user: alice }, { items: [{ product: catalog.get('PRD-112')._id, quantity: 1 }] });
   for (const [key, topic, text] of faqs) await insert(Faq, { key }, { topic, text });
-  for (const [file, suite] of [['scenarios', 'evaluation'], ['security_cases', 'security']]) {
+  const commerceFaqs = [
+    ['faq-cod', 'Cash on delivery', 'Cash on delivery (COD) is marked Pending until the order is delivered.'],
+    ['faq-test-payment', 'Failed payment', 'A failed payment leaves your cart available for another attempt.'],
+  ];
+  for (const [key, topic, text] of commerceFaqs) await insert(Faq, { key }, { topic, text });
+  for (const [file, suite] of [['scenarios', 'evaluation'], ['security_cases', 'security'], ['security_mern', 'security']]) {
     for (const entry of await readJson(`../qa/datasets/${file}.json`)) {
       await insert(TestCase, { key: entry.key }, { suite, category: entry.category, name: entry.name, payload: entry });
     }
