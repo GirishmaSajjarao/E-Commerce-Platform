@@ -97,3 +97,25 @@ test('advances a COD order, exposes tracking, and refunds an approved return', a
   expect((await admin.patch(path + '/return').send({ decision: 'Approved' }).expect(200)).body.payment.status).toBe('Refunded');
   expect(await Product.countDocuments({ stock: { $lt: 0 } })).toBe(0);
 });
+
+test('protects admin records and derives sales from stored payments and orders', async () => {
+  const admin = await login('admin@qa.local', 'Admin@123');
+  const alice = await login('alice@example.com');
+  for (const item of ['customers', 'payments', 'carts', 'products', 'sales-summary']) {
+    await alice.get('/api/admin/' + item).expect(403);
+  }
+  const customers = (await admin.get('/api/admin/customers').expect(200)).body;
+  expect(customers.find(row => row.email === 'alice@example.com')).toHaveProperty('phone');
+  expect(customers.every(row => !Object.hasOwn(row, 'passwordHash'))).toBe(true);
+  const payments = (await admin.get('/api/admin/payments').expect(200)).body;
+  expect(payments.every(row => !Object.hasOwn(row, 'last4'))).toBe(true);
+  const sales = (await admin.get('/api/admin/sales-summary').expect(200)).body;
+  expect(sales.revenue).toBe(payments.filter(row => row.status === 'Paid').reduce((sum, row) => sum + row.amount, 0));
+  expect(sales.ordersPerDay.reduce((sum, row) => sum + row.count, 0)).toBe(await Order.countDocuments());
+  await admin.post('/api/admin/products').send({
+    sku: 'TEST-SKU', name: 'Sample', category: 'Other', description: 'Sample inventory product', price: 500, stock: 3, active: true,
+  }).expect(201);
+  await admin.patch('/api/admin/products/TEST-SKU').send({ price: 800, stock: 4, active: false }).expect(200);
+  await admin.patch('/api/admin/products/TEST-SKU').send({ stock: -1 }).expect(400);
+  await alice.get('/api/products/TEST-SKU').expect(404);
+});

@@ -9,6 +9,7 @@ import swagger from 'swagger-ui-express';
 import mongoose from 'mongoose';
 import { auth, requireUser, requireAdmin } from './auth.js';
 import { commerce } from './commerce-routes.js';
+import { admin } from './admin.js';
 import { config } from './config.js';
 import { handleError, HttpError, rejectUnsafeKeys } from './http.js';
 
@@ -40,6 +41,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', auth);
 app.use('/api', commerce);
 app.get('/api/admin/session', requireUser, requireAdmin, (req, res) => res.json({ role: req.user.role }));
+app.use('/api/admin', admin);
 app.use('/api/docs', swagger.serve, swagger.setup({
   openapi: '3.0.3', info: { title: 'Store and Support API', version: '1.0.0' },
   paths: Object.fromEntries([['get', '/api/health'], ['post', '/api/auth/register'], ['post', '/api/auth/login'], ['post', '/api/auth/logout'], ['get', '/api/auth/me']].map(([method, path]) => [path, { [method]: { responses: { [path.endsWith('logout') ? 204 : path.endsWith('register') ? 201 : 200]: { description: 'Success' } } } }])),

@@ -30,3 +30,12 @@ Built shop filters, product details, cart editing, checkout, confirmation, order
 - `npm.cmd run dev` initially found a standalone MongoDB already running on port 27017. With `DEV_MONGO_PORT=27018` and a matching `MONGODB_URI`, it started all three processes. `npm.cmd run seed` exited 0, the proxied health endpoint returned `{"status":"ok"}`, and the storefront returned HTTP 200.
 
 Open verification: end-to-end browser flow and persistent restart. Support UI follows in Phase 5.
+
+## Phase 4 — Administration
+
+Built role-protected sales, orders, payments, customers, carts and inventory pages. Sales totals and charts read MongoDB records. Admin payment listings omit card fields.
+
+- `npm.cmd test` passed 8 Jest tests in 2 suites and 3 Vitest tests in 1 file. The added test verified customer access denial, payment field omission, revenue and order counts, product creation and disablement, and stock validation.
+- `npm.cmd run build -w client` completed and transformed 82 modules.
+
+Open verification: browser admin workflows and chart rendering. Support insights and AI Quality follow in later phases.

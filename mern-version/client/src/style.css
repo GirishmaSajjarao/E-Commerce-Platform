@@ -37,4 +37,11 @@ input, select { display: block; width: 100%; border: 1px solid #8f9c91; border-r
 .totals { margin-bottom: .7rem; text-transform: capitalize; }
 .totals > div:last-child { border-top: 1px solid #dbe2d8; font-weight: 750; }
 .line + .line, .order + .order { margin-top: 1rem; }
+.admin-nav { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.35rem; }
+.admin-nav .active { font-weight: 750; }
+.admin-block { margin-top: 1rem; }
+.table-scroll { max-width: 100%; overflow-x: auto; margin-top: 1rem; }
+table { width: 100%; text-align: left; background: white; border-collapse: collapse; }
+th, td { padding: .7rem; border-bottom: 1px solid #dbe2d8; }
+.check { width: auto; }
 @media (max-width: 680px) { .split { grid-template-columns: 1fr; } }

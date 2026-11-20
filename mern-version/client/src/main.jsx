@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider, useMutation, useQuery, useQueryClient
 import { BrowserRouter, Link, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { api } from './api.js';
 import { CartPage, CheckoutPage, OrderDetail, OrdersPage, ProductDetail, Shop } from './store.jsx';
+import { Admin } from './admin.jsx';
 import './style.css';
 
 function App() {
@@ -42,6 +43,7 @@ function App() {
     <header><nav className="nav" aria-label="Main navigation">
       <Link className="brand" to="/">Cedar Store</Link><Link to="/">Shop</Link>
       {user ? <><Link to="/cart">Cart</Link><Link to="/orders">My orders</Link>
+        {user.role === 'admin' && <Link to="/admin">Administration</Link>}
         <button className="secondary" disabled={logout.isPending} onClick={() => logout.mutate()}>Sign out</button></> : <Link to="/login">Sign in</Link>}
     </nav></header>
     <main>
@@ -55,6 +57,7 @@ function App() {
           <Route path="/checkout" element={privatePage(<CheckoutPage user={user} />)} />
           <Route path="/orders" element={privatePage(<OrdersPage user={user} />)} />
           <Route path="/orders/:number" element={privatePage(<OrderDetail user={user} confirmed={location.state?.confirmed} />)} />
+          <Route path="/admin/*" element={privatePage(user?.role === 'admin' ? <Admin /> : <p role="alert">Administrator access is required.</p>)} />
           <Route path="*" element={<p>Page not found. <Link to="/">Back to shop</Link></p>} />
         </Routes>}
     </main>
