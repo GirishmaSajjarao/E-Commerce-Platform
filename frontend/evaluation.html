@@ -1,0 +1,48 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LLM Evaluation · AI Support QA</title><link rel="stylesheet" href="css/style.css"></head><body>
+<script src="assets/chart.umd.js"></script><script src="js/app.js"></script>
+<script>
+(async () => {
+if (!await shell("evaluation", "LLM Evaluation")) return;
+const C = $("#content");
+
+C.innerHTML = `<div class="banner mock" id="eval-note" style="display:none"></div>
+<div class="card"><h2>Run an evaluation</h2><p class="muted">DeepEval and Ragas call your real LLM as a judge (needs GEMINI_API_KEY, MOCK_MODE=false). Promptfoo's deterministic suite works without a key.</p>
+<div class="row"><label>Scenarios<select id="limit"><option value="5">First 5 (quick)</option><option value="10" selected>First 10</option><option value="">All 32 (slow)</option></select></label>
+<label>Promptfoo suite<select id="pf-suite"><option value="deterministic">deterministic</option><option value="rubric">rubric (LLM grader)</option></select></label></div>
+<div class="row" style="margin-top:10px"><button class="primary" data-fw="deepeval">Run DeepEval</button><button class="primary" data-fw="ragas">Run Ragas</button><button class="primary" data-fw="promptfoo">Run Promptfoo</button></div>
+<div id="run-status" style="margin-top:10px"></div></div>
+<div class="section"><h2>Recent evaluation runs</h2></div><div class="card scroll"><table id="runs"></table></div>
+<div class="section"><h2>DeepEval vs Ragas <span class="tag">stored separately, averaged here</span></h2></div><div class="card scroll"><table id="cmp"></table></div>
+<div class="section"><h2>Results</h2><label style="margin-left:auto">Run<select id="run-filter"><option value="">Latest results</option></select></label></div><div class="card scroll"><table id="results"></table></div>`;
+let busy = false;
+async function loadRuns() {
+  const runs = (await api("/runs?limit=60")).filter(r => ["deepeval", "ragas", "promptfoo"].includes(r.kind));
+  $("#runs").innerHTML = `<tr><th>ID</th><th>Framework</th><th>Status</th><th>Total</th><th>Passed</th><th>Failed</th><th>Errors</th><th>Started</th><th>Message</th><th></th></tr>` + runs.map(r => `<tr><td>${r.id}</td><td>${r.kind} ${mockTag(r.is_mock)}</td><td>${badge(r.status)}</td><td>${r.total}</td><td>${r.passed}</td><td>${r.failed}</td><td>${r.errors}</td><td>${when(r.started_at)}</td><td>${esc(r.message || "")}</td><td><button data-rerun="${r.id}">Re-run</button> <button data-view="${r.id}">View</button></td></tr>`).join("");
+  const sel = $("#run-filter"), cur = sel.value; sel.innerHTML = `<option value="">Latest results</option>` + runs.map(r => `<option value="${r.id}">#${r.id} ${r.kind}</option>`).join(""); sel.value = cur;
+  document.querySelectorAll("[data-rerun]").forEach(b => b.onclick = () => start(() => api(`/runs/${b.dataset.rerun}/rerun`, {method: "POST"})));
+  document.querySelectorAll("[data-view]").forEach(b => b.onclick = () => { sel.value = b.dataset.view; loadResults(); });
+}
+async function loadResults() {
+  const rid = $("#run-filter").value;
+  const rows = await api("/evaluations/results" + (rid ? "?run_id=" + rid : ""));
+  $("#results").innerHTML = `<tr><th>Framework</th><th>Scenario</th><th>Metric</th><th>Score</th><th>Threshold</th><th>Result</th><th>Details</th></tr>` + (rows.map(r => `<tr><td>${r.framework} ${mockTag(r.is_mock)}</td><td class="mono">${esc(r.scenario_key)}</td><td>${esc(r.metric)}</td><td>${r.score == null ? "—" : r.score.toFixed(2)}</td><td>${r.threshold ?? ""}</td><td>${badge(r.error ? "error" : r.passed ? "passed" : "failed")}</td>
+  <td><details><summary>view</summary><b>Question</b><pre>${esc(r.question)}</pre><b>Expected</b><pre>${esc(r.expected_output)}</pre><b>Retrieved context</b><pre>${esc((r.retrieved_context || []).join("\n"))}</pre><b>Actual response</b><pre>${esc(r.actual_output)}</pre><b>${r.error ? "Error" : "Reason"}</b><pre>${esc(r.error || r.reason)}</pre></details></td></tr>`).join("") || `<tr><td colspan=7 class="muted">No results yet.</td></tr>`);
+  const cmp = await api("/evaluations/compare");
+  $("#cmp").innerHTML = `<tr><th>Metric</th><th>DeepEval</th><th>Ragas</th></tr>` + Object.entries(cmp).map(([m, v]) => `<tr><td>${esc(m)}</td><td>${v.deepeval ?? "—"}</td><td>${v.ragas ?? "—"}</td></tr>`).join("") || "";
+  if (!Object.keys(cmp).length) $("#cmp").innerHTML = `<tr><td class="muted">No DeepEval/Ragas scores yet.</td></tr>`;
+}
+async function start(fn) {
+  if (busy) return; busy = true; clearError();
+  try {
+    const run = await fn(); $("#run-status").innerHTML = `Run #${run.id} started…`;
+    const done = await poll(run.id, r => $("#run-status").innerHTML = `Run #${r.id}: ${badge(r.status)} ${r.passed} passed · ${r.failed} failed · ${r.errors} errors ${esc(r.message || "")}`);
+    if (done && ["failed", "skipped"].includes(done.status)) showError(`Run #${done.id} ${done.status}: ${done.message}`);
+  } catch (e) { showError(e.message); } finally { busy = false; await loadRuns(); await loadResults(); }
+}
+document.querySelectorAll("[data-fw]").forEach(b => b.onclick = () => start(() => api("/evaluations/run", {method: "POST", body: {framework: b.dataset.fw, limit: $("#limit").value ? +$("#limit").value : null, promptfoo_suite: $("#pf-suite").value}})));
+$("#run-filter").onchange = loadResults;
+api("/settings").then(s => { if (!s.real_llm_available) { const n = $("#eval-note"); n.style.display = "block"; n.textContent = "DeepEval and Ragas are disabled: " + s.real_llm_hint; } });
+loadRuns().then(loadResults).catch(e => showError(e.message));
+
+})();
+</script></body></html>

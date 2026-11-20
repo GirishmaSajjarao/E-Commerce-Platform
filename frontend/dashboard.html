@@ -1,0 +1,51 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dashboard · AI Support QA</title><link rel="stylesheet" href="css/style.css"></head><body>
+<script src="assets/chart.umd.js"></script><script src="js/app.js"></script>
+<script>
+(async () => {
+if (!await shell("dashboard", "Dashboard")) return;
+const C = $("#content");
+
+const f = {from: "", to: "", cat: "", fw: "", st: ""};
+C.innerHTML = `<div class="card row" id="filters"><label>From<input type="date" id="f-from"></label><label>To<input type="date" id="f-to"></label>
+<label>Test category<select id="f-cat"><option value="">All</option>${["unit","integration","api","functional","regression","llm_eval","security","ui"].map(x=>`<option>${x}</option>`).join("")}</select></label>
+<label>Evaluation framework<select id="f-fw"><option value="">All</option><option>deepeval</option><option>ragas</option><option>promptfoo</option></select></label>
+<label>Status<select id="f-st"><option value="">All</option><option>passed</option><option>failed</option><option>skipped</option></select></label>
+<button class="primary" id="apply">Apply filters</button></div><div id="dash"></div>`;
+let charts = [];
+const kpi = (l, v, s, c = "") => `<div class="card kpi ${c}" data-testid="kpi-${l.toLowerCase().replace(/[^a-z]+/g,"-")}"><h3>${l}</h3><div class="v">${v ?? "—"}</div><div class="s">${s || ""}</div></div>`;
+async function load() {
+  clearError();
+  const q = new URLSearchParams(); if ($("#f-from").value) q.set("date_from", $("#f-from").value); if ($("#f-to").value) q.set("date_to", $("#f-to").value);
+  const qq = new URLSearchParams(q); if ($("#f-cat").value) qq.set("category", $("#f-cat").value); if ($("#f-fw").value) qq.set("framework", $("#f-fw").value); if ($("#f-st").value) qq.set("status", $("#f-st").value);
+  let s, t; try { [s, t] = await Promise.all([api("/dashboard/summary?" + qq), api("/dashboard/trends?" + q)]); } catch (e) { return showError(e.message); }
+  const sw = s.software_tests, sec = s.security, ev = s.llm_evaluation, ap = s.api;
+  const fwRows = Object.entries(ev.frameworks).map(([k, v]) => `<tr><td>${k}</td><td>${v.results}</td><td>${v.average_score ?? "—"}</td><td>${v.metric_pass_rate ?? "—"}%</td><td>${v.errors}</td><td>${v.mock_rows ? '<span class="badge b-mock">MOCK ' + v.mock_rows + '</span>' : ""}</td></tr>`).join("");
+  $("#dash").innerHTML = `${s.has_mock_data ? '<div class="banner mock" style="margin-top:12px">Some stored security/evaluation rows were produced with MOCK responses. They are labelled and excluded from the genuine LLM score.</div>' : ""}
+  <div class="section"><h2>Software tests</h2><p>Conventional pass/fail results from pytest, API and Playwright runs</p></div>
+  <div class="grid kpis">${kpi("Total test cases", sw.distinct_tests + sec.total, `${sw.distinct_tests} software tests · ${s.test_cases_in_datasets.evaluation} eval scenarios · ${s.test_cases_in_datasets.security} security cases in datasets`)}
+  ${kpi("Passed tests", sw.passed, "software tests", "pass")}${kpi("Failed tests", sw.failed, sw.skipped + " skipped", "fail")}
+  ${kpi("Pass rate", sw.pass_percentage == null ? "—" : sw.pass_percentage + "%", "software tests, excl. skipped")}
+  ${kpi("API success rate", ap.success_rate == null ? "—" : ap.success_rate + "%", ap.calls + " recorded API calls")}
+  ${kpi("Avg API latency", ap.avg_latency_ms == null ? "—" : ap.avg_latency_ms + " ms", ap.p95_latency_ms == null ? "" : "p95 " + ap.p95_latency_ms + " ms")}</div>
+  <div class="section"><h2>LLM evaluation <span class="tag">model quality, not pass rate</span></h2><p>${esc(ev.note)}</p></div>
+  <div class="grid kpis">${kpi("LLM evaluation score", ev.overall_score_genuine ?? "—", "0–1, DeepEval + Ragas, real LLM only")}
+  ${kpi("Hallucinations detected", ev.hallucinations_detected, "of " + ev.hallucination_checks + " DeepEval checks", ev.hallucinations_detected ? "fail" : "")}
+  ${kpi("Security pass rate", sec.pass_percentage == null ? "—" : sec.pass_percentage + "%", `${sec.passed} passed / ${sec.failed} failed${sec.mock_results ? " (" + sec.mock_results + " mock)" : ""}`)}
+  ${(ap.chat_latency || []).map(c => kpi("Chat latency" + (c.mock ? " (mock)" : ""), c.avg_ms + " ms", c.n + " answers")).join("")}</div>
+  <div class="grid two" style="margin-top:12px"><div class="card"><h2>Software tests by category</h2><canvas id="c1"></canvas></div><div class="card"><h2>Historical trend</h2><canvas id="c2"></canvas></div>
+  <div class="card"><h2>Average metric score per framework (0–1)</h2><canvas id="c3"></canvas></div>
+  <div class="card"><h2>Frameworks</h2><div class="scroll"><table><tr><th>Framework</th><th>Results</th><th>Avg score</th><th>Metric pass rate</th><th>Errors</th><th></th></tr>${fwRows || '<tr><td colspan=6 class="muted">No evaluation results yet. Run an evaluation on the LLM Evaluation page.</td></tr>'}</table></div></div></div>
+  <div class="section"><h2>Recent test executions</h2></div><div class="card scroll"><table id="recent"><tr><th>When</th><th>Category</th><th>Test</th><th>Status</th><th>ms</th></tr>
+  ${s.recent_executions.map(r => `<tr><td>${when(r.created_at)}</td><td>${esc(r.category)}</td><td class="mono">${esc(r.name)}</td><td>${badge(r.status)}</td><td>${r.duration_ms}</td></tr>`).join("") || '<tr><td colspan=5 class="muted">No test executions recorded yet. Go to Execution History and run a suite.</td></tr>'}</table></div>`;
+  charts.forEach(c => c.destroy()); charts = [];
+  const cats = Object.keys(sw.by_category);
+  charts.push(new Chart($("#c1"), {type: "bar", data: {labels: cats, datasets: [{label: "Passed", data: cats.map(c => sw.by_category[c].passed), backgroundColor: "#1f9d6b"}, {label: "Failed", data: cats.map(c => sw.by_category[c].failed), backgroundColor: "#d6453d"}, {label: "Skipped", data: cats.map(c => sw.by_category[c].skipped), backgroundColor: "#9aa4b1"}]}, options: {responsive: true, scales: {x: {stacked: true}, y: {stacked: true, beginAtZero: true}}}}));
+  const ds = [{label: "Software pass %", data: t.software_pass_pct, borderColor: "#2f6fbb", spanGaps: true}, {label: "Security pass %", data: t.security_pass_pct, borderColor: "#e8a317", spanGaps: true}];
+  charts.push(new Chart($("#c2"), {type: "line", data: {labels: t.labels, datasets: ds}, options: {scales: {y: {min: 0, max: 100}}}}));
+  const fws = Object.keys(ev.frameworks).filter(k => k !== "promptfoo"), mets = [...new Set(fws.flatMap(k => Object.keys(ev.frameworks[k].metrics)))];
+  charts.push(new Chart($("#c3"), {type: "bar", data: {labels: mets, datasets: fws.map((k, i) => ({label: k, data: mets.map(m => ev.frameworks[k].metrics[m] ?? null), backgroundColor: ["#2f6fbb", "#e8a317"][i % 2]}))}, options: {scales: {y: {min: 0, max: 1}}}}));
+}
+$("#apply").onclick = load; load();
+
+})();
+</script></body></html>

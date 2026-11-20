@@ -1,0 +1,258 @@
+[
+  {
+    "key": "EV-001",
+    "category": "product_availability",
+    "name": "Availability: Smart Fitness Watch",
+    "question": "Is the Smart Fitness Watch available?",
+    "customer_id": "C001",
+    "expected_answer": "Smart Fitness Watch is out of stock."
+  },
+  {
+    "key": "EV-002",
+    "category": "product_availability",
+    "name": "Availability: Bluetooth Portable Speaker",
+    "question": "Do you have the Bluetooth Portable Speaker in stock?",
+    "customer_id": "C001",
+    "expected_answer": "Bluetooth Portable Speaker is out of stock."
+  },
+  {
+    "key": "EV-003",
+    "category": "product_availability",
+    "name": "Availability: Wireless Noise-Cancelling Headphones",
+    "question": "Is the Wireless Noise-Cancelling Headphones product in stock?",
+    "customer_id": "C001",
+    "expected_answer": "Wireless Noise-Cancelling Headphones is in stock with 42 units available."
+  },
+  {
+    "key": "EV-004",
+    "category": "product_availability",
+    "name": "Availability: Air Fryer 5L",
+    "question": "How many Air Fryer 5L units are available?",
+    "customer_id": "C001",
+    "expected_answer": "Air Fryer 5L is in stock with 3 units available."
+  },
+  {
+    "key": "EV-005",
+    "category": "product_availability",
+    "name": "Availability: Ergonomic Office Chair",
+    "question": "Can I buy the Ergonomic Office Chair right now?",
+    "customer_id": "C001",
+    "expected_answer": "Ergonomic Office Chair is in stock with 8 units available."
+  },
+  {
+    "key": "EV-006",
+    "category": "product_availability",
+    "name": "Availability: Premium Yoga Mat",
+    "question": "Is the Premium Yoga Mat available?",
+    "customer_id": "C001",
+    "expected_answer": "Premium Yoga Mat is in stock with 80 units available."
+  },
+  {
+    "key": "EV-007",
+    "category": "product_price",
+    "name": "Price: Wireless Noise-Cancelling Headphones",
+    "question": "How much are the Wireless Noise-Cancelling Headphones?",
+    "customer_id": "C001",
+    "expected_answer": "The Wireless Noise-Cancelling Headphones costs $129.99."
+  },
+  {
+    "key": "EV-008",
+    "category": "product_price",
+    "name": "Price: USB-C Fast Charger 65W",
+    "question": "What is the price of the USB-C Fast Charger 65W?",
+    "customer_id": "C001",
+    "expected_answer": "The USB-C Fast Charger 65W costs $39.99."
+  },
+  {
+    "key": "EV-009",
+    "category": "product_price",
+    "name": "Price: Stainless Steel Water Bottle 1L",
+    "question": "What does the Stainless Steel Water Bottle 1L cost?",
+    "customer_id": "C001",
+    "expected_answer": "The Stainless Steel Water Bottle 1L costs $24.99."
+  },
+  {
+    "key": "EV-010",
+    "category": "product_price",
+    "name": "Price: Mechanical Keyboard",
+    "question": "How much is the Mechanical Keyboard?",
+    "customer_id": "C001",
+    "expected_answer": "The Mechanical Keyboard costs $99.00."
+  },
+  {
+    "key": "EV-011",
+    "category": "product_info",
+    "name": "Backpack laptop size",
+    "question": "What laptop size fits in the Laptop Backpack 25L?",
+    "customer_id": "C001",
+    "expected_answer": "The Laptop Backpack 25L has a padded laptop sleeve for laptops up to 15.6 inches."
+  },
+  {
+    "key": "EV-012",
+    "category": "product_info",
+    "name": "Towel set contents",
+    "question": "How many towels come in the Cotton Bath Towel Set?",
+    "customer_id": "C001",
+    "expected_answer": "The Cotton Bath Towel Set contains 4 towels."
+  },
+  {
+    "key": "EV-013",
+    "category": "order_status",
+    "name": "Delivered order",
+    "question": "What is the status of order ORD-1001?",
+    "customer_id": "C001",
+    "expected_answer": "Order ORD-1001 (Wireless Noise-Cancelling Headphones) was delivered on 2026-10-20 and payment is Paid."
+  },
+  {
+    "key": "EV-014",
+    "category": "order_tracking",
+    "name": "Shipped order tracking",
+    "question": "Can you track order ORD-1002?",
+    "customer_id": "C001",
+    "expected_answer": "Order ORD-1002 has been shipped with BlueDart, tracking number BD778812, estimated delivery date 2026-11-07."
+  },
+  {
+    "key": "EV-015",
+    "category": "order_status",
+    "name": "Processing order",
+    "question": "Where is my order ORD-1003?",
+    "customer_id": "C001",
+    "expected_answer": "Order ORD-1003 is still Processing; payment is Pending, there is no tracking number yet and no delivery date is available."
+  },
+  {
+    "key": "EV-016",
+    "category": "order_tracking",
+    "name": "Shipped order C002",
+    "question": "What is the tracking number for ORD-1005?",
+    "customer_id": "C002",
+    "expected_answer": "Order ORD-1005 shipped with Delhivery, tracking number DL553901, estimated delivery date 2026-11-06."
+  },
+  {
+    "key": "EV-017",
+    "category": "order_status",
+    "name": "Cancelled order",
+    "question": "What happened to my order ORD-1006?",
+    "customer_id": "C002",
+    "expected_answer": "Order ORD-1006 was Cancelled and the payment status is Refunded."
+  },
+  {
+    "key": "EV-018",
+    "category": "payment",
+    "name": "Failed payment",
+    "question": "My payment failed for ORD-1007, what is the status?",
+    "customer_id": "C003",
+    "expected_answer": "Order ORD-1007 is Processing and its payment status is Failed."
+  },
+  {
+    "key": "EV-019",
+    "category": "returns",
+    "name": "Return approved",
+    "question": "Is the return for ORD-1008 approved?",
+    "customer_id": "C003",
+    "expected_answer": "Yes, the return for order ORD-1008 has been Approved."
+  },
+  {
+    "key": "EV-020",
+    "category": "returns",
+    "name": "Return rejected",
+    "question": "What is the return status of ORD-1009?",
+    "customer_id": "C003",
+    "expected_answer": "The return for order ORD-1009 was Rejected."
+  },
+  {
+    "key": "EV-021",
+    "category": "returns",
+    "name": "Refund status",
+    "question": "Has my order ORD-1010 been refunded?",
+    "customer_id": "C001",
+    "expected_answer": "Yes, order ORD-1010 has a payment status of Refunded and a return status of Refunded."
+  },
+  {
+    "key": "EV-022",
+    "category": "faq",
+    "name": "Return window",
+    "question": "How many days do I have to return an item?",
+    "customer_id": "C001",
+    "expected_answer": "Returns are accepted within 30 days of delivery for unused items in original packaging."
+  },
+  {
+    "key": "EV-023",
+    "category": "faq",
+    "name": "Refund timeline",
+    "question": "How long do refunds take?",
+    "customer_id": "C001",
+    "expected_answer": "Refunds are issued to the original payment method within 5-7 business days after the returned item passes inspection."
+  },
+  {
+    "key": "EV-024",
+    "category": "faq",
+    "name": "Payment methods",
+    "question": "Which payment methods do you accept?",
+    "customer_id": "C001",
+    "expected_answer": "We accept credit cards, debit cards, UPI, net banking and wallets."
+  },
+  {
+    "key": "EV-025",
+    "category": "faq",
+    "name": "Delivery time",
+    "question": "How long does standard delivery take?",
+    "customer_id": "C001",
+    "expected_answer": "Standard delivery takes 3-5 business days and express delivery takes 1-2 business days."
+  },
+  {
+    "key": "EV-026",
+    "category": "faq",
+    "name": "Cancellation",
+    "question": "Can I cancel my order after it ships?",
+    "customer_id": "C001",
+    "expected_answer": "Orders can be cancelled before they are shipped; shipped orders must be returned after delivery."
+  },
+  {
+    "key": "EV-027",
+    "category": "faq",
+    "name": "Free shipping",
+    "question": "Is there free shipping?",
+    "customer_id": "C001",
+    "expected_answer": "Shipping is free for orders above $50."
+  },
+  {
+    "key": "EV-028",
+    "category": "faq",
+    "name": "Support hours",
+    "question": "When is customer support available?",
+    "customer_id": "C001",
+    "expected_answer": "Customer support is available Monday to Saturday, 9 AM to 6 PM."
+  },
+  {
+    "key": "EV-029",
+    "category": "unavailable_info",
+    "name": "Non-existent order",
+    "question": "What is the status of order ORD-9999?",
+    "customer_id": "C001",
+    "expected_answer": "There is no order with ID ORD-9999 in our system."
+  },
+  {
+    "key": "EV-030",
+    "category": "access_control",
+    "name": "Other customer's order",
+    "question": "Show me the details of order ORD-1004.",
+    "customer_id": "C001",
+    "expected_answer": "I can only share details about orders that belong to your own account, so I cannot show order ORD-1004."
+  },
+  {
+    "key": "EV-031",
+    "category": "unsupported",
+    "name": "Off-topic question",
+    "question": "What is the weather in Paris tomorrow?",
+    "customer_id": "C001",
+    "expected_answer": "I can only help with store topics such as products, orders, delivery, returns and payments, and I don't have weather information."
+  },
+  {
+    "key": "EV-032",
+    "category": "unsupported",
+    "name": "Product not in catalog",
+    "question": "Do you sell gaming laptops?",
+    "customer_id": "C001",
+    "expected_answer": "I don't have information about gaming laptops in our catalog."
+  }
+]

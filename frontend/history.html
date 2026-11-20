@@ -1,0 +1,31 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Test Execution History · AI Support QA</title><link rel="stylesheet" href="css/style.css"></head><body>
+<script src="assets/chart.umd.js"></script><script src="js/app.js"></script>
+<script>
+(async () => {
+if (!await shell("history", "Test Execution History")) return;
+const C = $("#content");
+
+C.innerHTML = `<div class="card"><h2>Run a test suite</h2><div class="row"><label>Suite<select id="suite"><option value="offline">offline (everything except UI and live-LLM)</option><option>unit</option><option>integration</option><option>api</option><option>functional</option><option>regression</option><option>llm_eval</option><option>security</option><option>ui</option><option>all</option></select></label>
+<button class="primary" id="run" style="align-self:end">Run</button><span id="status" style="align-self:end"></span></div><p class="muted">UI suite needs Playwright browsers: <span class="mono">playwright install chromium</span>. Results are saved in SQLite and survive restarts.</p></div>
+<div class="section"><h2>Runs</h2></div><div class="card scroll"><table id="runs"></table></div>
+<div class="section"><h2>Individual test results</h2><label style="margin-left:auto">Category<select id="cat"><option value="">All</option>${["unit","integration","api","functional","regression","llm_eval","security","ui"].map(x => `<option>${x}</option>`).join("")}</select></label><label>Status<select id="st"><option value="">All</option><option>passed</option><option>failed</option><option>error</option><option>skipped</option></select></label></div>
+<div class="card scroll"><table id="recs"></table></div>`;
+async function load() {
+  const runs = await api("/runs?limit=40");
+  $("#runs").innerHTML = `<tr><th>ID</th><th>Kind</th><th>Params</th><th>Status</th><th>Total</th><th>Passed</th><th>Failed</th><th>Errors</th><th>Started</th><th></th></tr>` + runs.map(r => `<tr><td>${r.id}</td><td>${r.kind} ${mockTag(r.is_mock)}</td><td class="mono">${esc(JSON.stringify(r.params || {}).slice(0, 60))}</td><td>${badge(r.status)}</td><td>${r.total}</td><td>${r.passed}</td><td>${r.failed}</td><td>${r.errors}</td><td>${when(r.started_at)}</td><td><button data-rr="${r.id}">Re-run</button>${r.message ? `<details><summary>message</summary><pre>${esc(r.message)}</pre></details>` : ""}</td></tr>`).join("");
+  document.querySelectorAll("[data-rr]").forEach(b => b.onclick = () => go(() => api(`/runs/${b.dataset.rr}/rerun`, {method: "POST"})));
+  const q = new URLSearchParams({limit: 150}); if ($("#cat").value) q.set("category", $("#cat").value); if ($("#st").value) q.set("status", $("#st").value);
+  const recs = await api("/tests/records?" + q);
+  $("#recs").innerHTML = `<tr><th>When</th><th>Run</th><th>Category</th><th>Test</th><th>Status</th><th>ms</th><th>Error / details</th></tr>` + (recs.map(r => `<tr><td>${when(r.created_at)}</td><td>${r.run_id ?? ""}</td><td>${esc(r.category)}</td><td class="mono">${esc(r.name)}</td><td>${badge(r.status)}</td><td>${r.duration_ms}</td><td>${esc((r.error || "").slice(0, 240))}${r.details ? `<details><summary>details</summary><pre>${esc(JSON.stringify(r.details, null, 1))}</pre></details>` : ""}</td></tr>`).join("") || `<tr><td colspan=7 class="muted">No test results recorded yet.</td></tr>`);
+}
+async function go(fn) {
+  clearError(); $("#run").disabled = true;
+  try { const run = await fn(); const d = await poll(run.id, r => $("#status").innerHTML = `Run #${r.id} ${badge(r.status)} ${r.passed} passed · ${r.failed} failed`, 3000);
+    if (d.status === "failed") showError(`Run #${d.id} failed: ${d.message}`); } catch (e) { showError(e.message); } finally { $("#run").disabled = false; await load(); }
+}
+$("#run").onclick = () => go(() => api("/tests/execute", {method: "POST", body: {suite: $("#suite").value}}));
+$("#cat").onchange = $("#st").onchange = () => load().catch(e => showError(e.message));
+load().catch(e => showError(e.message));
+
+})();
+</script></body></html>

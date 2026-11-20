@@ -1,0 +1,26 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>API Testing · AI Support QA</title><link rel="stylesheet" href="css/style.css"></head><body>
+<script src="assets/chart.umd.js"></script><script src="js/app.js"></script>
+<script>
+(async () => {
+if (!await shell("api", "API Testing")) return;
+const C = $("#content");
+
+C.innerHTML = `<div class="card"><h2>API test suite (Python Requests + Pytest)</h2><p class="muted">Runs <span class="mono">api_tests/</span> against a temporary test server (mock mode, separate database). Interactive docs: <a href="/docs" target="_blank">Swagger UI</a> · <a href="assets/postman_collection.json" download>Postman collection</a></p>
+<div class="row"><button class="primary" id="run">Run API tests</button><span id="status"></span></div></div>
+<div class="section"><h2>Latest API test results</h2></div><div class="card scroll"><table id="recs"></table></div>
+<div class="section"><h2>Recorded API calls <span class="tag">latency</span></h2></div><div class="card scroll"><table id="calls"></table></div>`;
+async function load() {
+  const recs = await api("/tests/records?category=api&limit=80"), calls = await api("/tests/api-calls?limit=60");
+  $("#recs").innerHTML = `<tr><th>When</th><th>Test</th><th>Status</th><th>ms</th><th>Error</th></tr>` + (recs.map(r => `<tr><td>${when(r.created_at)}</td><td class="mono">${esc(r.name)}</td><td>${badge(r.status)}</td><td>${r.duration_ms}</td><td>${esc((r.error || "").slice(0, 200))}</td></tr>`).join("") || `<tr><td colspan=5 class="muted">No API test results yet.</td></tr>`);
+  $("#calls").innerHTML = `<tr><th>When</th><th>Method</th><th>Path</th><th>Status</th><th>Latency (ms)</th></tr>` + calls.map(r => `<tr><td>${when(r.created_at)}</td><td>${r.method}</td><td class="mono">${esc(r.path)}</td><td>${r.status_code}</td><td>${r.latency_ms}</td></tr>`).join("");
+}
+$("#run").onclick = async () => {
+  clearError(); $("#run").disabled = true;
+  try { const run = await api("/tests/execute", {method: "POST", body: {suite: "api"}});
+    const d = await poll(run.id, r => $("#status").innerHTML = `Run #${r.id} ${badge(r.status)} ${r.passed} passed · ${r.failed} failed`);
+    if (d.status === "failed") showError(d.message); await load(); } catch (e) { showError(e.message); } finally { $("#run").disabled = false; }
+};
+load().catch(e => showError(e.message));
+
+})();
+</script></body></html>

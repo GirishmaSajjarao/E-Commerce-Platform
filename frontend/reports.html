@@ -1,0 +1,20 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Quality Reports · AI Support QA</title><link rel="stylesheet" href="css/style.css"></head><body>
+<script src="assets/chart.umd.js"></script><script src="js/app.js"></script>
+<script>
+(async () => {
+if (!await shell("reports", "Quality Reports")) return;
+const C = $("#content");
+
+C.innerHTML = `<div class="card"><h2>Generate a quality report</h2><p class="muted">Built from saved execution records. Software pass rates and LLM evaluation scores are reported separately.</p>
+<div class="row"><button class="primary" id="html">Generate HTML report</button><button id="json">Generate JSON report</button></div><div id="msg" style="margin-top:8px"></div></div>
+<div class="section"><h2>Available reports <span class="tag">includes pytest HTML reports</span></h2></div><div class="card scroll"><table id="tbl"></table></div>`;
+async function load() {
+  const list = await api("/reports");
+  $("#tbl").innerHTML = `<tr><th>File</th><th>Size</th><th></th></tr>` + (list.map(r => `<tr><td class="mono">${esc(r.name)}</td><td>${r.size_kb} KB</td><td><button data-open="${esc(r.name)}">Open</button></td></tr>`).join("") || `<tr><td colspan=3 class="muted">No reports yet.</td></tr>`);
+  document.querySelectorAll("[data-open]").forEach(b => b.onclick = () => openReport(b.dataset.open));
+}
+for (const f of ["html", "json"]) $("#" + f).onclick = async () => { clearError(); try { const r = await api("/reports/generate", {method: "POST", body: {format: f}}); $("#msg").innerHTML = `<div class="banner ok">Report created: ${esc(r.name)}</div>`; await load(); } catch (e) { showError(e.message); } };
+load().catch(e => showError(e.message));
+
+})();
+</script></body></html>

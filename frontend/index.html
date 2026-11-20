@@ -1,0 +1,21 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Login · AI Support QA</title>
+<link rel="stylesheet" href="css/style.css"></head><body>
+<div class="login"><div class="card"><h1>AI Support QA Platform</h1><p class="muted">Sign in to the quality dashboard or the customer chatbot.</p>
+<div id="error-banner" class="banner err" style="display:none" data-testid="login-error"></div>
+<form id="login-form"><label>Email<input id="email" type="email" required autocomplete="username" value="admin@qa.local"></label>
+<label>Password<input id="password" type="password" required autocomplete="current-password"></label>
+<button class="primary" id="login-btn" type="submit">Sign in</button></form>
+<details style="margin-top:14px"><summary>Demo accounts (sample data)</summary><pre>QA admin:  admin@qa.local / Admin@123
+Customer:  alice@example.com / Customer@123
+           bob@example.com   / Customer@123</pre></details></div></div>
+<script src="js/app.js"></script><script>
+if (token()) location.href = me() && me().role === "admin" ? "dashboard.html" : "chatbot.html";
+$("#login-form").onsubmit = async e => {
+  e.preventDefault(); clearError(); $("#login-btn").disabled = true;
+  try {
+    const r = await api("/auth/login", {method: "POST", body: {email: $("#email").value.trim().toLowerCase(), password: $("#password").value}});
+    localStorage.setItem("token", r.access_token); localStorage.setItem("user", JSON.stringify(r.user));
+    location.href = r.user.role === "admin" ? "dashboard.html" : "chatbot.html";
+  } catch (err) { showError(err.message); } finally { $("#login-btn").disabled = false; }
+};
+</script></body></html>

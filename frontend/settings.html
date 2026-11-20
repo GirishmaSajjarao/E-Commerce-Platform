@@ -1,0 +1,21 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Settings · AI Support QA</title><link rel="stylesheet" href="css/style.css"></head><body>
+<script src="assets/chart.umd.js"></script><script src="js/app.js"></script>
+<script>
+(async () => {
+if (!await shell("settings", "Settings")) return;
+const C = $("#content");
+
+C.innerHTML = `<div class="grid two"><div class="card"><h2>LLM connection</h2><div id="info"></div><div class="row" style="margin-top:10px"><button class="primary" id="test">Test real LLM connection</button></div><div id="conn" style="margin-top:10px"></div>
+<h3 style="margin-top:16px">How to connect Gemini</h3><ol class="muted" style="padding-left:18px;margin:0"><li>Create a free key at <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a>.</li><li>Open the <span class="mono">.env</span> file in the project root.</li><li>Set <span class="mono">GEMINI_API_KEY=your-key</span> and <span class="mono">MOCK_MODE=false</span>.</li><li>Restart the server, then press the test button.</li></ol></div>
+<div class="card"><h2>Evaluation thresholds</h2><p class="muted">A metric passes when its score is ≥ threshold (hallucination: ≤ its own threshold).</p><div class="row"><label>Score threshold<input id="t1" type="number" min="0" max="1" step="0.05"></label><label>Hallucination max<input id="t2" type="number" min="0" max="1" step="0.05"></label><button class="primary" id="save" style="align-self:end">Save</button></div><div id="saved"></div></div></div>`;
+async function load() {
+  const s = await api("/settings");
+  $("#info").innerHTML = `<table><tr><td>Mode</td><td>${s.mock_mode ? '<span class="badge b-mock">MOCK_MODE on</span>' : '<span class="badge b-passed">real LLM</span>'}</td></tr><tr><td>Provider</td><td>${esc(s.llm_provider)}</td></tr><tr><td>Model</td><td class="mono">${esc(s.model)}</td></tr><tr><td>API key set</td><td>${s.api_key_configured ? "yes (hidden)" : "no"}</td></tr><tr><td>Database</td><td>${esc(s.database)}</td></tr></table>`;
+  $("#t1").value = s.eval_threshold; $("#t2").value = s.hallucination_threshold;
+}
+$("#test").onclick = async () => { $("#conn").innerHTML = "Testing…"; try { const r = await api("/settings/test-connection?real=true", {method: "POST"}); $("#conn").innerHTML = `<div class="banner ${r.ok ? "ok" : "err"}" data-testid="conn-result">${esc(r.message)}${r.latency_ms ? " (" + r.latency_ms + " ms)" : ""}</div>`; } catch (e) { $("#conn").innerHTML = ""; showError(e.message); } };
+$("#save").onclick = async () => { clearError(); try { await api("/settings/thresholds", {method: "PUT", body: {eval_threshold: +$("#t1").value, hallucination_threshold: +$("#t2").value}}); $("#saved").innerHTML = '<div class="banner ok" style="margin-top:8px">Thresholds saved.</div>'; } catch (e) { showError(e.message); } };
+load().catch(e => showError(e.message));
+
+})();
+</script></body></html>

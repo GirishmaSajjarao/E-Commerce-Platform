@@ -1,0 +1,23 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Test Case Management · AI Support QA</title><link rel="stylesheet" href="css/style.css"></head><body>
+<script src="assets/chart.umd.js"></script><script src="js/app.js"></script>
+<script>
+(async () => {
+if (!await shell("testcases", "Test Case Management")) return;
+const C = $("#content");
+
+C.innerHTML = `<div class="card row"><label>Suite<select id="suite"><option value="evaluation">Evaluation scenarios</option><option value="security">Security cases</option></select></label><span class="muted">Cases are stored in SQLite; disabled cases are skipped by runs.</span></div>
+<div class="card scroll" style="margin-top:12px"><table id="tbl"></table></div>
+<div class="card" style="margin-top:12px"><h2>Add a test case</h2><div class="row"><label>Key<input id="n-key" placeholder="EV-100"></label><label>Category<input id="n-cat" placeholder="faq"></label><label style="flex:1">Name<input id="n-name" placeholder="Short description"></label></div>
+<label style="margin-top:8px">Payload (JSON). Evaluation: question, expected_answer, customer_id. Security: prompt, expect (refuse|answer), customer_id, must_contain_any<textarea id="n-payload" rows="5">{"question": "", "expected_answer": "", "customer_id": "C001"}</textarea></label><button class="primary" id="add" style="margin-top:8px">Add test case</button></div>`;
+async function load() {
+  const rows = await api("/test-cases?suite=" + $("#suite").value);
+  $("#tbl").innerHTML = `<tr><th>Key</th><th>Category</th><th>Name</th><th>Input</th><th>Enabled</th><th></th></tr>` + rows.map(r => `<tr><td class="mono">${esc(r.key)}</td><td>${esc(r.category)}</td><td>${esc(r.name)}</td><td>${esc(r.payload.question || r.payload.prompt)}</td><td>${badge(r.enabled ? "passed" : "skipped").replace(">passed<", ">on<").replace(">skipped<", ">off<")}</td><td><button data-t="${r.id}">Toggle</button> <button data-d="${r.id}">Delete</button></td></tr>`).join("");
+  document.querySelectorAll("[data-t]").forEach(b => b.onclick = async () => { try { await api(`/test-cases/${b.dataset.t}/toggle`, {method: "PATCH"}); load(); } catch (e) { showError(e.message); } });
+  document.querySelectorAll("[data-d]").forEach(b => b.onclick = async () => { if (!confirm("Delete this test case?")) return; try { await api(`/test-cases/${b.dataset.d}`, {method: "DELETE"}); load(); } catch (e) { showError(e.message); } });
+}
+$("#suite").onchange = () => { $("#n-payload").value = $("#suite").value === "evaluation" ? '{"question": "", "expected_answer": "", "customer_id": "C001"}' : '{"prompt": "", "expect": "refuse", "customer_id": "C001"}'; load(); };
+$("#add").onclick = async () => { clearError(); try { await api("/test-cases", {method: "POST", body: {suite: $("#suite").value, key: $("#n-key").value.trim(), category: $("#n-cat").value.trim(), name: $("#n-name").value.trim(), payload: JSON.parse($("#n-payload").value)}}); load(); } catch (e) { showError(e.name === "SyntaxError" ? "Payload is not valid JSON: " + e.message : e.message); } };
+load().catch(e => showError(e.message));
+
+})();
+</script></body></html>

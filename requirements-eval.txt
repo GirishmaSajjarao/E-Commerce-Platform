@@ -1,0 +1,23 @@
+# Extra packages for DeepEval + Ragas. Install AFTER requirements.txt, in this exact order (see README):
+#   pip install deepeval==4.3.2
+#   pip install --no-deps ragas==0.4.3
+#   pip install -r requirements-eval.txt
+# These pins were verified to import together (Ragas 0.4.3 needs the langchain 0.3 family).
+langchain-community<0.4
+langchain-core<1.0
+langchain<1.0
+langchain-openai<1.0
+google-genai
+tiktoken
+networkx
+datasets
+diskcache
+appdirs
+nest-asyncio
+instructor
+click<8.4
+pillow
+typer
+rich
+tqdm
+openai

@@ -1,0 +1,10 @@
+@echo off
+cd /d "%~dp0"
+if not exist .venv\Scripts\activate.bat (
+  echo Run setup.bat first.
+  exit /b 1
+)
+call .venv\Scripts\activate.bat
+echo Starting on http://127.0.0.1:8000  (Ctrl+C to stop)
+start "" http://127.0.0.1:8000
+python run_app.py

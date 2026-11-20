@@ -1,0 +1,16 @@
+.env
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+database/*.db
+database/*.db-*
+logs/*
+!logs/.gitkeep
+reports/*
+!reports/.gitkeep
+node_modules/
+evaluation/promptfoo/.promptfoo/
+.deepeval/
+.DS_Store

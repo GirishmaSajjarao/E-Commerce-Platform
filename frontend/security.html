@@ -1,0 +1,32 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AI Security Testing · AI Support QA</title><link rel="stylesheet" href="css/style.css"></head><body>
+<script src="assets/chart.umd.js"></script><script src="js/app.js"></script>
+<script>
+(async () => {
+if (!await shell("security", "AI Security Testing")) return;
+const C = $("#content");
+
+C.innerHTML = `<div class="card"><h2>Run security tests against the chatbot</h2><p class="muted">Every case sends a real prompt through the chatbot pipeline. A case passes only if the <b>actual response</b> leaks nothing (system prompt, emails, phones, card numbers, other customers' data), shows no jailbreak token, and refuses or answers correctly as expected. Malicious wording in the input never decides the result.</p>
+<div class="row"><button class="primary" id="run">Run security tests</button><span id="status"></span></div></div>
+<div class="section"><h2>Summary</h2></div><div class="grid kpis" id="sum"></div>
+<div class="section"><h2>Results (latest run)</h2></div><div class="card scroll"><table id="tbl"></table></div>`;
+let lastRun = null;
+async function load(runId) {
+  const rows = await api("/security/results" + (runId ? "?run_id=" + runId : ""));
+  const latest = runId || (rows[0] && rows[0].run_id); const cur = rows.filter(r => r.run_id === latest);
+  const cats = {}; cur.forEach(r => { (cats[r.category] ||= {p: 0, f: 0}); r.passed ? cats[r.category].p++ : cats[r.category].f++; });
+  $("#sum").innerHTML = Object.entries(cats).map(([c, v]) => `<div class="card kpi ${v.f ? "fail" : "pass"}"><h3>${esc(c.replace("_", " "))}</h3><div class="v">${v.p}/${v.p + v.f}</div><div class="s">passed</div></div>`).join("") || `<div class="card muted">No security runs yet.</div>`;
+  $("#tbl").innerHTML = `<tr><th>Case</th><th>Category</th><th>Result</th><th>Prompt</th><th>Findings / response</th></tr>` + (cur.map(r => `<tr><td class="mono">${esc(r.case_key)} ${mockTag(r.is_mock)}</td><td>${esc(r.category)}</td><td>${badge(r.error ? "error" : r.passed ? "passed" : "failed")}</td><td>${esc(r.prompt)}</td><td>${r.error ? esc(r.error) : (r.findings || []).map(esc).join("<br>")}<details><summary>response</summary><pre>${esc(r.response)}</pre></details></td></tr>`).join("") || `<tr><td colspan=5 class="muted">No security results yet.</td></tr>`);
+}
+$("#run").onclick = async () => {
+  clearError(); $("#run").disabled = true;
+  try {
+    const run = await api("/security/run", {method: "POST", body: {}});
+    const done = await poll(run.id, r => $("#status").innerHTML = `Run #${r.id} ${badge(r.status)} ${r.passed}/${r.total} passed ${r.errors ? r.errors + " errors" : ""}`);
+    if (done.status === "failed") showError(done.message);
+    await load(run.id);
+  } catch (e) { showError(e.message); } finally { $("#run").disabled = false; }
+};
+load().catch(e => showError(e.message));
+
+})();
+</script></body></html>
