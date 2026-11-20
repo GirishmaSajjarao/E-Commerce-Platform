@@ -7,22 +7,23 @@
     "test": "node --experimental-vm-modules ../node_modules/jest/bin/jest.js --runInBand"
   },
   "dependencies": {
-    "express": "4.21.2",
-    "mongoose": "8.18.0",
-    "zod": "3.25.76",
-    "jsonwebtoken": "9.0.2",
     "bcryptjs": "3.0.2",
-    "helmet": "8.1.0",
+    "cookie-parser": "1.4.7",
     "cors": "2.8.5",
+    "dotenv": "16.6.1",
+    "express": "4.21.2",
     "express-rate-limit": "7.5.1",
+    "helmet": "8.1.0",
+    "jsonwebtoken": "9.0.2",
+    "mongoose": "8.18.0",
     "pino": "9.9.0",
     "pino-http": "10.5.0",
     "swagger-ui-express": "5.0.1",
-    "dotenv": "16.6.1",
-    "cookie-parser": "1.4.7"
+    "zod": "3.25.76"
   },
   "devDependencies": {
     "jest": "29.7.0",
+    "promptfoo": "0.125.1",
     "supertest": "7.1.4"
   }
 }

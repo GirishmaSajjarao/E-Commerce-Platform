@@ -78,3 +78,18 @@ test('stores actual mock security results with explicit mock flags', async () =>
   expect(report.results.every(result => result.isMock && result.answer.startsWith('[MOCK RESPONSE]'))).toBe(true);
   expect(report.results.filter(result => !result.passed).map(result => result.key)).toEqual([]);
 });
+
+test('skips evaluator jobs in mock mode and refuses unauthorized uploads', async () => {
+  const admin = await login('admin@qa.local', 'Admin@123');
+  await request(app).post('/api/qa/eval-results').send({}).expect(403);
+  const { body: queued } = await admin.post('/api/qa/eval/run').send({ framework: 'ragas', limit: 3 }).expect(202);
+  let report;
+  for (let attempt = 0; attempt < 30; attempt++) {
+    report = (await admin.get('/api/qa/runs/' + queued._id).expect(200)).body;
+    if (report.run.status === 'skipped') break;
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  expect(report.run).toMatchObject({ status: 'skipped', isMock: true });
+  expect(report.evaluations).toEqual([]);
+  await admin.get('/api/qa/reports/' + queued._id).expect('Content-Disposition', /attachment/).expect(200);
+});

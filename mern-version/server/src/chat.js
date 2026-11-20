@@ -50,9 +50,13 @@ export async function retrieve(message, customer, history = '', selectedOrder) {
   const context = orders.map(order => describeOrder(order, payments.find(payment => payment.order.equals(order._id)), message));
   for (const number of explicit) if (!orders.some(order => order.number === number)) context.push(`No order with ID ${number} exists in our system.`);
   if (/\bcart\b/i.test(message)) context.push(cart?.items.length ? 'Cart: ' + cart.items.filter(item => item.product).map(item => `${item.quantity} x ${item.product.name} at ${usd(item.product.price)}`).join(', ') : 'Your cart is empty.');
+  const requested = message.match(/^do you (?:sell|carry|stock|have) (.+?)(?:[.?!]+)?$/i)?.[1];
+  const requestedTokens = requested ? tokens(requested.replace(/\b(?:in stock|available)\b/gi, '')) : null;
   const productFacts = products.map(p => {
-    const nameMatch = overlap(q, tokens(p.name));
+    const name = tokens(p.name);
+    const nameMatch = overlap(q, name);
     const explicitMatch = message.toUpperCase().includes(p.sku);
+    if (requestedTokens?.size && !explicitMatch && overlap(requestedTokens, name) !== requestedTokens.size) return { p, score: 0 };
     return { p, score: nameMatch * 3 + (nameMatch ? overlap(q, tokens(p.description + ' ' + p.category)) : 0) + (explicitMatch ? 10 : 0) };
   }).filter(row => row.score >= 3).sort((a, b) => b.score - a.score).slice(0, 3);
   for (const { p } of productFacts) context.push(`Product ${p.sku}: ${p.name}; category: ${p.category}; price: ${usd(p.price)}; availability: ${p.stock ? `in stock (${p.stock} units available)` : 'out of stock'}; description: ${p.description}`);

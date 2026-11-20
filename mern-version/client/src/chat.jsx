@@ -91,10 +91,47 @@ export function AdminChats() {
 }
 export function SecurityPage() {
   const [id, setId] = useState('');
+  const [limit, setLimit] = useState(5);
+  const cache = useQueryClient();
   const runs = useQuery({ queryKey: ['qa', 'runs'], queryFn: () => api('/qa/runs'), refetchInterval: 2000 });
   const detail = useQuery({ queryKey: ['qa', id], queryFn: () => api('/qa/runs/' + id), enabled: !!id, refetchInterval: 2000 });
-  const trigger = useMutation({ mutationFn: () => api('/qa/security/run', { method: 'POST' }), onSuccess: run => setId(run._id) });
-  return <><h1>AI Quality</h1><button disabled={trigger.isPending} onClick={() => trigger.mutate()}>Run security checks</button>
+  const settings = useQuery({ queryKey: ['qa', 'settings'], queryFn: () => api('/qa/settings') });
+  const trigger = useMutation({
+    mutationFn: ({ path, body }) => api('/qa/' + path, { method: 'POST', body }),
+    onSuccess: run => { setId(run._id); cache.invalidateQueries({ queryKey: ['qa', 'runs'] }); },
+  });
+  const save = useMutation({ mutationFn: body => api('/qa/settings', { method: 'PUT', body }),
+    onSuccess: () => cache.invalidateQueries({ queryKey: ['qa', 'settings'] }) });
+  const connection = useMutation({ mutationFn: () => api('/qa/test-connection', { method: 'POST' }) });
+  return <><h1>AI Quality</h1>
+    <div className="cards">
+      <section className="card fieldset"><h2>Response checks</h2>
+        <button disabled={trigger.isPending} onClick={() => trigger.mutate({ path: 'security/run' })}>Run security checks</button>
+        <button disabled={trigger.isPending} onClick={() => trigger.mutate({ path: 'promptfoo/run', body: { rubric: false } })}>Run Promptfoo</button>
+      </section>
+      <section className="card fieldset"><h2>LLM judging</h2>
+        <label>Scenario limit<input type="number" min={1} max={100} value={limit} onChange={event => setLimit(Number(event.target.value))} /></label>
+        <button disabled={trigger.isPending} onClick={() => trigger.mutate({ path: 'promptfoo/run', body: { rubric: true } })}>Run Promptfoo rubric</button>
+        {['deepeval', 'ragas'].map((framework, i) => <button key={framework} disabled={trigger.isPending || limit < 1 || limit > 100}
+          onClick={() => trigger.mutate({ path: 'eval/run', body: { framework, limit } })}>Run {i ? 'Ragas' : 'DeepEval'}</button>)}
+      </section>
+      <section className="card fieldset"><h2>Evaluation settings</h2><RequestState query={settings} />
+        {settings.data && <form className="fieldset" key={settings.data.threshold + ':' + settings.data.hallucination} onSubmit={event => {
+          event.preventDefault();
+          const fields = new FormData(event.currentTarget);
+          save.mutate({ threshold: Number(fields.get('threshold')), hallucination: Number(fields.get('hallucination')) });
+        }}>
+          <p>{settings.data.mock ? 'MOCK' : settings.data.model}</p>
+          <label>Passing score<input required type="number" name="threshold" min="0" max="1" step=".01" defaultValue={settings.data.threshold} /></label>
+          <label>Maximum hallucination score<input required type="number" name="hallucination" min="0" max="1" step=".01" defaultValue={settings.data.hallucination} /></label>
+          <button disabled={save.isPending}>Save thresholds</button>
+        </form>}
+        <button className="secondary" disabled={connection.isPending} onClick={() => connection.mutate()}>Test connection</button>
+        {connection.data && <p role="status">{connection.data.mock ? 'MOCK response available' : 'Gemini connection successful'} · {connection.data.latencyMs} ms</p>}
+        {save.isSuccess && <p role="status">Thresholds saved.</p>}
+        {(save.error || connection.error) && <p role="alert">{(save.error || connection.error).message}</p>}
+      </section>
+    </div>
     {trigger.error && <p role="alert">{trigger.error.message}</p>}<RequestState query={runs} />
     {runs.data?.length === 0 && <p>No runs recorded.</p>}
     {!!runs.data?.length && <label className="narrow">Recent runs<select value={id} onChange={event => setId(event.target.value)}>
@@ -102,9 +139,16 @@ export function SecurityPage() {
     </select></label>}
     {id && <RequestState query={detail} />}
     {detail.data && <section className="card"><h2>{detail.data.run.status}{detail.data.run.isMock ? ' · MOCK' : ''}</h2>
+      <p><a href={'/api/qa/reports/' + id} download>Download run report</a></p>
       {detail.data.run.error && <p role="alert">{detail.data.run.error}</p>}
       {detail.data.run.summary && <p>{Object.entries(detail.data.run.summary).map(([key, value]) => key + ': ' + value).join(' · ')}</p>}
       {detail.data.results.map(row => <details key={row._id}><summary>{row.key} · {row.passed ? 'Passed' : 'Failed'}{row.isMock ? ' · MOCK' : ''}</summary>
-        <p>{row.answer}</p><ul>{row.findings.map(finding => <li key={finding}>{finding}</li>)}</ul></details>)}</section>}
+        <p>{row.answer}</p><ul>{row.findings.map(finding => <li key={finding}>{finding}</li>)}</ul></details>)}
+      {detail.data.evaluations.map(row => row.result ?
+        <p key={row._id}>{row.result.description} · {row.result.error ? 'Error' : row.result.passed ? 'Passed' : 'Failed'}</p> :
+        <details key={row._id}><summary>{row.key} · {row.framework}</summary>
+          <ul>{row.metrics.map(metric => <li key={metric.name}>{metric.name} · {metric.score.toFixed(3)} · {metric.passed ? 'Passed' : 'Failed'}{metric.reason ? ' · ' + metric.reason : ''}</li>)}</ul>
+        </details>)}
+    </section>}
   </>;
 }

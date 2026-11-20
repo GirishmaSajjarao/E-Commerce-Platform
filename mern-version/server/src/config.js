@@ -14,4 +14,5 @@ export const config = z.object({
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_MODEL: z.string().default('gemini-3.5-flash'),
   EVAL_SERVICE_TOKEN: z.string().optional(),
+  EVAL_SERVICE_URL: z.string().url().default('http://127.0.0.1:5050'),
 }).parse(process.env);

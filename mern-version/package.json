@@ -18,7 +18,8 @@
     "dev": "concurrently -k -n database,api,store \"npm run db:dev\" \"npm run dev -w server\" \"npm run dev -w client\"",
     "test": "npm test --workspaces --if-present",
     "test:e2e": "npm run test:e2e -w e2e",
-    "qa:promptfoo": "npm run qa:promptfoo -w server"
+    "qa:promptfoo": "node scripts/promptfoo.js",
+    "qa:dataset": "node scripts/build-dataset.js"
   },
   "devDependencies": {
     "concurrently": "9.1.2",

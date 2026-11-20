@@ -49,3 +49,15 @@ Built customer-scoped retrieval, server-side order actions with explicit confirm
 - The first run found a missing prefix on saved mock security answers. The rerun verified the fix.
 
 The Gemini provider currently uses the Gemini REST endpoint with a mockable fetch adapter. Live Gemini, browser chat and external judging are unverified.
+
+## Phase 6 — QA jobs, reports and evaluator
+
+Added Promptfoo deterministic and rubric suites, result import, the HTTP-only Python evaluation worker, token-checked ingestion, stale-run recovery, job history, downloadable reports, settings, and database-derived scenarios.
+
+- `npm.cmd test` passed 14 Jest tests in 3 suites and 3 Vitest tests in 1 file. `npm.cmd run build -w client` exited 0.
+- `npm.cmd run qa:dataset` created 34 scenarios from the seeded store, for 66 total.
+- `node .data/check-eval.mjs` started an isolated API and Python worker and verified DeepEval and Ragas callbacks both persisted `skipped` with zero scores.
+- The same smoke command with `PROMPTFOO_NODE_BINARY` set used the Promptfoo CLI runner to import 18 results into MongoDB. All 18 passed, with 0 failures and 0 errors. The first run found an irrelevant product match for a laptop request. Catalog retrieval was tightened and the rerun passed.
+- Promptfoo 0.125.1 reports a minimum Node version of 22.22. The app and regular tests used Node 20.20.0, while Promptfoo ran on Node 22.22.0.
+
+Live Gemini, the rubric suite, and live DeepEval/Ragas scoring are unverified. No Gemini key was available in the execution environment.

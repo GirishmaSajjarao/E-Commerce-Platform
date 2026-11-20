@@ -47,3 +47,4 @@ export const TestCase = model('TestCase', { key: unique, suite: String, category
 export const TestRun = model('TestRun', { kind: String, status: String, isMock: Boolean, error: String, summary: Schema.Types.Mixed, finishedAt: Date });
 export const EvalResult = model('EvalResult', { run: ref('TestRun'), framework: String, key: String, metrics: Schema.Types.Mixed, result: Schema.Types.Mixed });
 export const SecurityResult = model('SecurityResult', { run: ref('TestRun'), key: String, passed: Boolean, isMock: Boolean, answer: String, findings: [String] });
+export const QaSettings = model('QaSettings', { _id: String, threshold: Number, hallucination: Number });
