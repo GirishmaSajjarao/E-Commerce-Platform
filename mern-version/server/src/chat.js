@@ -11,6 +11,7 @@ const numbers = value => [...new Set((value.match(/\bORD-\d{4,12}\b/gi) || []).m
 const usd = value => '$' + (value / 100).toFixed(2);
 const iso = value => value?.toISOString().slice(0, 10);
 const lastFour = /\b(?:last|final)\s*(?:four|4)\b/i;
+const omitLastFour = value => value.replace(/; card ending in \d{4}\b/gi, '');
 
 function describeOrder(order, payment, message) {
   const items = order.items.map(item => `${item.quantity} x ${item.name}`).join(', ');
@@ -63,7 +64,10 @@ export async function retrieve(message, customer, history = '', selectedOrder) {
   const matchedFaq = faqs.map(faq => ({ faq, score: overlap(q, tokens(faq.topic)) * 2 + overlap(q, tokens(faq.text)) }))
     .filter(row => row.score >= 2).sort((a, b) => b.score - a.score).slice(0, 2);
   for (const { faq } of matchedFaq) context.push(`${faq.topic}: ${faq.text}`);
-  if (!context.length && history) return retrieve(history, customer, '', selectedOrder);
+  if (!context.length && history) {
+    const previousContext = await retrieve(history, customer, '', selectedOrder);
+    return lastFour.test(message) ? previousContext : { ...previousContext, context: previousContext.context.map(omitLastFour) };
+  }
   return { denied: false, context: context.map(redactPii) };
 }
 
@@ -71,7 +75,9 @@ export async function answerQuestion(message, customer, history = [], selectedOr
   const start = performance.now();
   const { denied, context } = await retrieve(message, customer, history.filter(item => item.role === 'user').map(item => item.content).join(' ').slice(-400), selectedOrder);
   const raw = denied ? "I can't share details about orders that don't belong to your account." :
-    await llm.generate({ message: redactCard(message), context, history: history.map(item => ({ role: item.role, content: redactPii(item.content) })) });
+    await llm.generate({ message: redactPii(message), context, history: history.map(item => ({
+      role: item.role, content: omitLastFour(redactPii(item.content)),
+    })) });
   const safe = raw.toLowerCase().includes(CANARY.toLowerCase()) ? refusal : redactPii(raw);
   const prefix = llm.isMock ? '[MOCK RESPONSE] ' : '';
   return { role: 'assistant', content: prefix + safe, rawContent: prefix + redactCard(raw), context, latencyMs: Math.round(performance.now() - start), isMock: llm.isMock, flagged: safe !== raw, raw };

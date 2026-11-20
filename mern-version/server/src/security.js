@@ -45,7 +45,7 @@ export async function runSecurity(runId) {
           }
         } else answer = await answerQuestion(test.prompt, customer?._id);
         const result = evaluateResponse(test, answer.raw, secrets);
-        const safe = redactPii(answer.raw).replaceAll(CANARY, '[internal reference removed]');
+        const safe = redactPii(answer.raw).replace(new RegExp(CANARY, 'gi'), '[internal reference removed]');
         const answerText = run.isMock && !safe.startsWith('[MOCK RESPONSE]') ? '[MOCK RESPONSE] ' + safe : safe;
         await SecurityResult.create({ ...result, run: run._id, key: record.key, answer: answerText, isMock: run.isMock });
         summary[result.passed ? 'passed' : 'failed']++;

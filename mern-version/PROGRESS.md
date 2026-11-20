@@ -61,3 +61,15 @@ Added Promptfoo deterministic and rubric suites, result import, the HTTP-only Py
 - Promptfoo 0.125.1 reports a minimum Node version of 22.22. The app and regular tests used Node 20.20.0, while Promptfoo ran on Node 22.22.0.
 
 Live Gemini, the rubric suite, and live DeepEval/Ragas scoring are unverified. No Gemini key was available in the execution environment.
+
+## Phase 7 — Browser acceptance, CI and delivery
+
+Added isolated Playwright page objects and browser tests, the Windows start and setup checks, a MERN GitHub Actions workflow, OpenAPI documentation, and a runnable Postman collection.
+
+- `npm.cmd run lint` passed the JavaScript syntax checks.
+- `npm.cmd test` passed 15 Jest tests in 3 suites and 3 Vitest tests in 1 file. Added UPI success and failure, empty cart, per-order totals and payment checks, and a card-number scan across test database collections.
+- `npm.cmd run build -w client` built 83 modules successfully. Vite reported ignored dependency-level directives.
+- `npm.cmd run test:e2e` with Chromium and `PROMPTFOO_NODE_BINARY` set passed 3 tests in 26.9 seconds. Verified checkout, shipment, tracking, chatbot access control, both failed card outcomes, and 18 imported QA results in the admin UI. The initial browser run found that the isolated storefront origin needed to be added to the test API allow-list. The reruns passed.
+- `npm.cmd run setup`, `npm.cmd run seed`, and `node .data/check-persistence.mjs` verified fresh auto-start and restart on port 27019. All 4 users, 12 products, and 10 orders survived. The earlier combined dev smoke test used port 27018 because port 27017 was already taken. MongoDB occasionally logged ECONNRESET while shutting down and exited successfully.
+
+Hosted CI, Postman execution, Docker, Atlas, and Gemini-backed jobs remain unverified. The optional Stripe test adapter is unimplemented. The npm lint command checks JavaScript syntax, and the Vite build checks JSX compilation.

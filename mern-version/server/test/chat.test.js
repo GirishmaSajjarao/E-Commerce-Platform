@@ -29,6 +29,7 @@ test('retrieves owned facts, excludes address data, and only includes last four 
   expect(owned).toContain('Delivered');
   expect(owned).not.toMatch(/QA-STORED|4242|example.com/);
   expect((await retrieve('Last four for ORD-1001', alice._id)).context[0]).toContain('card ending in 4242');
+  expect((await retrieve('Could you repeat that?', alice._id, 'Last four for ORD-1001')).context[0]).not.toContain('4242');
 });
 test('guards PII and evaluates the raw response', () => {
   const pii = ['sample@example.com', '555-123-4567', Array(4).fill('4242').join(' ')].join(', ');

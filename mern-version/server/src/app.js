@@ -14,6 +14,7 @@ import { chat } from './chat-routes.js';
 import { qa } from './qa.js';
 import { config } from './config.js';
 import { handleError, HttpError, rejectUnsafeKeys } from './http.js';
+import { openapi } from './openapi.js';
 
 export const app = express();
 app.disable('x-powered-by');
@@ -46,9 +47,7 @@ app.use('/api', chat);
 app.use('/api/qa', qa);
 app.get('/api/admin/session', requireUser, requireAdmin, (req, res) => res.json({ role: req.user.role }));
 app.use('/api/admin', admin);
-app.use('/api/docs', swagger.serve, swagger.setup({
-  openapi: '3.0.3', info: { title: 'Store and Support API', version: '1.0.0' },
-  paths: Object.fromEntries([['get', '/api/health'], ['post', '/api/auth/register'], ['post', '/api/auth/login'], ['post', '/api/auth/logout'], ['get', '/api/auth/me']].map(([method, path]) => [path, { [method]: { responses: { [path.endsWith('logout') ? 204 : path.endsWith('register') ? 201 : 200]: { description: 'Success' } } } }])),
-}));
+app.get('/api/openapi.json', (req, res) => res.json(openapi));
+app.use('/api/docs', swagger.serve, swagger.setup(openapi));
 app.use((req, res, next) => next(new HttpError(404, 'NOT_FOUND', 'Endpoint not found.')));
 app.use(handleError);

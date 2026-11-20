@@ -12,11 +12,13 @@
   ],
   "scripts": {
     "setup": "node scripts/setup.js",
+    "check-setup": "node scripts/check-setup.js",
     "seed": "node scripts/seed.js",
     "db:dev": "node scripts/dev-db.js",
     "db:docker": "docker compose up -d",
     "dev": "concurrently -k -n database,api,store \"npm run db:dev\" \"npm run dev -w server\" \"npm run dev -w client\"",
     "test": "npm test --workspaces --if-present",
+    "lint": "node scripts/lint.js",
     "test:e2e": "npm run test:e2e -w e2e",
     "qa:promptfoo": "node scripts/promptfoo.js",
     "qa:dataset": "node scripts/build-dataset.js"

@@ -1,0 +1,104 @@
+name: MERN store verification
+
+on:
+  push:
+    paths: ['mern-version/**', '.github/workflows/mern-ci.yml']
+  pull_request:
+    paths: ['mern-version/**', '.github/workflows/mern-ci.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: mern-version
+
+jobs:
+  app:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: mern-version/package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build -w client
+  browser-and-promptfoo:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.0'
+          cache: npm
+          cache-dependency-path: mern-version/package-lock.json
+      - run: npm ci
+      - run: npm exec -w e2e -- playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mern-playwright-report
+          path: |
+            mern-version/e2e/playwright-report
+            mern-version/e2e/test-results
+          if-no-files-found: ignore
+  live-key:
+    runs-on: ubuntu-22.04
+    outputs:
+      configured: ${{ steps.key.outputs.configured }}
+    steps:
+      - id: key
+        working-directory: .
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          if [ -n "$GEMINI_API_KEY" ]; then
+            echo 'configured=true' >> "$GITHUB_OUTPUT"
+          fi
+  live-gemini:
+    needs: live-key
+    if: needs.live-key.outputs.configured == 'true'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      MERN_TEST_LIVE: 'true'
+      MOCK_MODE: 'false'
+      API_URL: http://127.0.0.1:15001
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: mern-version/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci --ignore-scripts
+      - run: |
+          python -m pip install deepeval==4.3.2
+          python -m pip install --no-deps ragas==0.4.3
+          python -m pip install -r eval-service/requirements-eval.txt
+      - run: |
+          export EVAL_SERVICE_TOKEN="$(node -p "require('crypto').randomBytes(32).toString('hex')")"
+          python eval-service/app.py > /tmp/mern-evaluator.log 2>&1 &
+          evaluator=$!
+          node scripts/test-stack.js > /tmp/mern-live-api.log 2>&1 &
+          stack=$!
+          trap 'kill "$stack" "$evaluator" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 120); do
+            if curl -fsS "$API_URL/api/health" >/dev/null && curl -fsS http://127.0.0.1:5050/health >/dev/null; then
+              node scripts/live-smoke.js
+              exit
+            fi
+            sleep 1
+          done
+          echo 'Live test services did not start.'
+          exit 1

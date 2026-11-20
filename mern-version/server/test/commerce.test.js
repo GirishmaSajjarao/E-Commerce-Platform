@@ -119,3 +119,25 @@ test('protects admin records and derives sales from stored payments and orders',
   await admin.patch('/api/admin/products/TEST-SKU').send({ stock: -1 }).expect(400);
   await alice.get('/api/products/TEST-SKU').expect(404);
 });
+
+test('handles both UPI outcomes and preserves database invariants', async () => {
+  const carol = await login('carol@example.com');
+  await carol.post('/api/checkout').send(attempt([], { method: 'upi', upi: 'success' })).expect(400);
+  await carol.put('/api/cart/items/PRD-112').send({ quantity: 1 }).expect(200);
+  await carol.post('/api/checkout').send(attempt([], { method: 'upi', upi: 'failure' })).expect(402);
+  const { body } = await carol.post('/api/checkout').send(attempt([], { method: 'upi', upi: 'success' })).expect(201);
+  expect(body.payment).toMatchObject({ status: 'Paid', method: 'upi' });
+  expect(await Product.countDocuments({ stock: { $lt: 0 } })).toBe(0);
+  for (const order of await Order.find()) {
+    const itemsTotal = order.items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+    expect(order.subtotal).toBe(itemsTotal);
+    expect(order.total).toBe(itemsTotal + order.shipping + order.tax);
+    expect(await Payment.countDocuments({ order: order._id })).toBe(1);
+  }
+  const PAN = /(?<![0-9a-f])(?:\d[ -]?){12,18}\d(?![0-9a-f]|[ -]\d)/i;
+  const collections = await mongoose.connection.db.collections();
+  for (const collection of collections) {
+    const records = await collection.find().toArray();
+    expect(PAN.test(JSON.stringify(records))).toBe(false);
+  }
+});
