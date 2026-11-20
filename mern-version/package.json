@@ -1,0 +1,27 @@
+{
+  "name": "ecommerce-mern-qa",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "client",
+    "server",
+    "e2e"
+  ],
+  "scripts": {
+    "setup": "node scripts/setup.js",
+    "seed": "node scripts/seed.js",
+    "db:dev": "node scripts/dev-db.js",
+    "db:docker": "docker compose up -d",
+    "dev": "concurrently -k -n database,api,store \"npm run db:dev\" \"npm run dev -w server\" \"npm run dev -w client\"",
+    "test": "npm test --workspaces --if-present",
+    "test:e2e": "npm run test:e2e -w e2e",
+    "qa:promptfoo": "npm run qa:promptfoo -w server"
+  },
+  "devDependencies": {
+    "concurrently": "9.1.2",
+    "mongodb-memory-server": "10.2.0"
+  }
+}
