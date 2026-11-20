@@ -20,3 +20,13 @@ Built catalog search, customer carts, server-side totals, transactional checkout
 - The temporary Node installation disappeared between runs. Restoring it under the ignored workspace runtime directory allowed testing to continue.
 
 Open verification: browser checkout, UPI through the API tests, expanded storage invariants, and the optional Stripe test integration.
+
+## Phase 3 — Customer storefront
+
+Built shop filters, product details, cart editing, checkout, confirmation, order history, tracking, cancellation and return controls.
+
+- `npm.cmd test` passed 7 Jest tests in 2 suites and 3 Vitest tests in 1 file.
+- `npm.cmd run build -w client` built 77 modules. The build reported dependency directives and unused Tailwind utilities.
+- `npm.cmd run dev` initially found a standalone MongoDB already running on port 27017. With `DEV_MONGO_PORT=27018` and a matching `MONGODB_URI`, it started all three processes. `npm.cmd run seed` exited 0, the proxied health endpoint returned `{"status":"ok"}`, and the storefront returned HTTP 200.
+
+Open verification: end-to-end browser flow and persistent restart. Support UI follows in Phase 5.

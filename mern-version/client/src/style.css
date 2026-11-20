@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { font-family: system-ui, sans-serif; color: #18221c; background: #f7f8f3; }
+body { margin: 0; }
+header { background: #16352c; color: white; }
+.nav { max-width: 76rem; margin: auto; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; padding: 1rem; }
+.brand { font-weight: 800; font-size: 1.2rem; margin-right: auto; }
+.nav a { color: white; }
+a { color: #225747; text-underline-offset: .2em; }
+main { max-width: 76rem; margin: auto; padding: 2rem 1rem; }
+h1 { font-size: clamp(1.8rem, 5vw, 3rem); line-height: 1.1; margin: 0 0 1rem; font-weight: 750; }
+h2 { font-size: 1.2rem; line-height: 1.3; font-weight: 700; margin: .3rem 0 .8rem; }
+h3 { font-weight: 700; margin-top: 1rem; }
+p, ol, ul { margin: .65rem 0; }
+.hero { background: #e0ebe0; border-radius: 1rem; padding: 2rem; margin-bottom: 1rem; }
+.filters, .line, .price { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1rem; }
+.filters { margin-bottom: 1rem; }
+.cards, .split { display: grid; gap: 1rem; align-items: start; }
+.cards { grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); }
+.split { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+.card { background: white; border: 1px solid #dbe2d8; border-radius: .85rem; padding: 1.15rem; }
+.narrow { max-width: 30rem; }
+.muted { color: #536359; }
+.price { justify-content: space-between; margin: 1rem 0; }
+.stock { font-size: .875rem; padding: .15rem .45rem; border-radius: .4rem; background: #ebf2e9; }
+button, .button { border-radius: .45rem; background: #225747; color: white; padding: .55rem .85rem; font-weight: 650; text-decoration: none; display: inline-block; }
+button:disabled { opacity: .55; cursor: not-allowed; }
+.secondary { background: #edf3ed; color: #16352c; }
+label { display: block; font-weight: 600; }
+input, select { display: block; width: 100%; border: 1px solid #8f9c91; border-radius: .35rem; padding: .45rem .65rem; background: white; font-weight: 400; }
+:focus-visible { outline: 3px solid #c67439; outline-offset: 2px; }
+[role=alert] { color: #a52020; }
+.fieldset { display: grid; gap: .8rem; }
+.totals > div { display: flex; justify-content: space-between; gap: .5rem; padding: .35rem 0; }
+.totals { margin-bottom: .7rem; text-transform: capitalize; }
+.totals > div:last-child { border-top: 1px solid #dbe2d8; font-weight: 750; }
+.line + .line, .order + .order { margin-top: 1rem; }
+@media (max-width: 680px) { .split { grid-template-columns: 1fr; } }

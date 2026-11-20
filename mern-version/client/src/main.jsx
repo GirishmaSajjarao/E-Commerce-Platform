@@ -1,35 +1,28 @@
 import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { BrowserRouter, Link, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { api } from './api.js';
+import { CartPage, CheckoutPage, OrderDetail, OrdersPage, ProductDetail, Shop } from './store.jsx';
+import './style.css';
 
-async function api(path, body) {
-  const response = await fetch('/api' + path, body === undefined ? undefined : {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
-  });
-  if (response.status === 204) return null;
-  const payload = await response.json();
-  if (!response.ok) throw Object.assign(new Error(payload.error?.message || 'Request failed.'), { status: response.status });
-  return payload;
-}
-
-function Session() {
+function App() {
   const cache = useQueryClient();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [register, setRegister] = useState(false);
   const session = useQuery({ queryKey: ['session'], queryFn: async () => {
     try { return await api('/auth/me'); }
     catch (error) { if (error.status === 401) return null; throw error; }
   }, retry: false });
-  const login = useMutation({ mutationFn: fields => api(register ? '/auth/register' : '/auth/login', fields),
-    onSuccess: user => cache.setQueryData(['session'], user) });
-  const logout = useMutation({ mutationFn: () => api('/auth/logout', {}), onSuccess: () => cache.setQueryData(['session'], null) });
-  if (session.isPending) return <p>Loading account…</p>;
-  if (session.isError) return <p role="alert">{session.error.message}</p>;
-  if (session.data) return <main>
-    <h1>Welcome, {session.data.name}</h1><p>Account role: {session.data.role}</p>
-    <button onClick={() => logout.mutate()} disabled={logout.isPending}>Sign out</button>
-    {logout.error && <p role="alert">{logout.error.message}</p>}
-  </main>;
-  return <main>
+  const login = useMutation({ mutationFn: fields => api(register ? '/auth/register' : '/auth/login', { method: 'POST', body: fields }),
+    onSuccess: user => { cache.setQueryData(['session'], user); navigate(location.state?.from || '/', { replace: true }); } });
+  const logout = useMutation({ mutationFn: () => api('/auth/logout', { method: 'POST' }), onSuccess: () => {
+    cache.clear(); cache.setQueryData(['session'], null); navigate('/');
+  } });
+  const user = session.data;
+  const privatePage = element => user ? element : <Navigate to="/login" state={{ from: location.pathname }} replace />;
+  const form = <section className="card narrow">
     <h1>{register ? 'Create an account' : 'Sign in'}</h1>
     <form onSubmit={event => {
       event.preventDefault();
@@ -44,7 +37,30 @@ function Session() {
     <p><button type="button" onClick={() => { login.reset(); setRegister(!register); }}>
       {register ? 'Use an existing account' : 'Register'}
     </button></p>
-  </main>;
+  </section>;
+  return <>
+    <header><nav className="nav" aria-label="Main navigation">
+      <Link className="brand" to="/">Cedar Store</Link><Link to="/">Shop</Link>
+      {user ? <><Link to="/cart">Cart</Link><Link to="/orders">My orders</Link>
+        <button className="secondary" disabled={logout.isPending} onClick={() => logout.mutate()}>Sign out</button></> : <Link to="/login">Sign in</Link>}
+    </nav></header>
+    <main>
+      {logout.error && <p role="alert">{logout.error.message}</p>}
+      {session.isPending ? <p role="status">Loading account…</p> : session.isError ? <p role="alert">{session.error.message}</p> :
+        <Routes>
+          <Route path="/" element={<Shop user={user} />} />
+          <Route path="/login" element={user ? <Navigate to="/" replace /> : form} />
+          <Route path="/products/:sku" element={<ProductDetail user={user} />} />
+          <Route path="/cart" element={privatePage(<CartPage user={user} />)} />
+          <Route path="/checkout" element={privatePage(<CheckoutPage user={user} />)} />
+          <Route path="/orders" element={privatePage(<OrdersPage user={user} />)} />
+          <Route path="/orders/:number" element={privatePage(<OrderDetail user={user} confirmed={location.state?.confirmed} />)} />
+          <Route path="*" element={<p>Page not found. <Link to="/">Back to shop</Link></p>} />
+        </Routes>}
+    </main>
+  </>;
 }
 
-createRoot(document.getElementById('root')).render(<QueryClientProvider client={new QueryClient()}><Session /></QueryClientProvider>);
+createRoot(document.getElementById('root')).render(
+  <QueryClientProvider client={new QueryClient()}><BrowserRouter><App /></BrowserRouter></QueryClientProvider>,
+);
